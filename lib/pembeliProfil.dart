@@ -3,9 +3,13 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'pembeliDasboard.dart';
+import 'tukarMerchandisePage.dart';
+
 class PembeliProfilPage extends StatefulWidget {
   final int idPembeli;
-  const PembeliProfilPage({required this.idPembeli, Key? key}) : super(key: key);
+  const PembeliProfilPage({required this.idPembeli, Key? key})
+      : super(key: key);
 
   @override
   State<PembeliProfilPage> createState() => _PembeliProfilPageState();
@@ -17,6 +21,7 @@ class _PembeliProfilPageState extends State<PembeliProfilPage> {
   Map<String, dynamic>? alamatDefault;
   String? errorMessage;
   bool isLoading = true;
+  int _selectedIndex = 2; // Set ke index 2 karena ini adalah halaman profil
 
   @override
   void initState() {
@@ -32,15 +37,18 @@ class _PembeliProfilPageState extends State<PembeliProfilPage> {
 
     try {
       final profilResponse = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/pembeli/${widget.idPembeli}'),
+        Uri.parse(
+            'https://reusemartkf.barioth.web.id/api/pembeli/${widget.idPembeli}'),
       );
 
       final pembelianResponse = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/pembelian/pembeli/${widget.idPembeli}'),
+        Uri.parse(
+            'https://reusemartkf.barioth.web.id/api/pembelian/pembeli/${widget.idPembeli}'),
       );
 
       final alamatResponse = await http.get(
-        Uri.parse('http://10.0.2.2:8000/api/alamat/pembeli/${widget.idPembeli}'),
+        Uri.parse(
+            'https://reusemartkf.barioth.web.id/api/alamat/pembeli/${widget.idPembeli}'),
       );
 
       if (profilResponse.statusCode == 200 &&
@@ -53,7 +61,10 @@ class _PembeliProfilPageState extends State<PembeliProfilPage> {
         if (profilJson['success'] == true) {
           final alamatList = alamatJson['data'] as List<dynamic>;
           final defaultAlamat = alamatList.firstWhere(
-            (alamat) => alamat['IS_DEFAULT'] == 1,
+            (alamat) =>
+                alamat['IS_DEFAULT'] == 1 ||
+                alamat['IS_DEFAULT'] == "1" ||
+                alamat['IS_DEFAULT'].toString() == "1",
             orElse: () => null,
           );
 
@@ -65,13 +76,15 @@ class _PembeliProfilPageState extends State<PembeliProfilPage> {
           });
         } else {
           setState(() {
-            errorMessage = profilJson['message'] ?? 'Data profil tidak ditemukan';
+            errorMessage =
+                profilJson['message'] ?? 'Data profil tidak ditemukan';
             isLoading = false;
           });
         }
       } else {
         setState(() {
-          errorMessage = 'Gagal memuat data. Status: ${profilResponse.statusCode}/${pembelianResponse.statusCode}/${alamatResponse.statusCode}';
+          errorMessage =
+              'Gagal memuat data. Status: ${profilResponse.statusCode}/${pembelianResponse.statusCode}/${alamatResponse.statusCode}';
           isLoading = false;
         });
       }
@@ -81,6 +94,27 @@ class _PembeliProfilPageState extends State<PembeliProfilPage> {
         isLoading = false;
       });
     }
+  }
+
+  void _onNavItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    if (index == 0) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => PembeliDashboardPage()),
+      );
+    } else if (index == 1) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+            builder: (context) =>
+                TukarMerchandisePage(idPembeli: widget.idPembeli)),
+      );
+    }
+    // Index 2 adalah halaman saat ini (Profil), jadi tidak perlu navigasi
   }
 
   Widget buildProfileItem(IconData icon, String label, String value) {
@@ -126,7 +160,8 @@ class _PembeliProfilPageState extends State<PembeliProfilPage> {
         return Card(
           margin: const EdgeInsets.symmetric(vertical: 8),
           elevation: 3,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           child: Padding(
             padding: const EdgeInsets.all(12.0),
             child: Column(
@@ -141,7 +176,8 @@ class _PembeliProfilPageState extends State<PembeliProfilPage> {
                 const SizedBox(height: 4),
                 Text('Total Bayar: Rp ${transaksi['TOTAL_BAYAR']}'),
                 const SizedBox(height: 8),
-                const Text('Barang:', style: TextStyle(fontWeight: FontWeight.bold)),
+                const Text('Barang:',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
                 ...barangList.map((barang) {
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2.0),
@@ -176,7 +212,8 @@ class _PembeliProfilPageState extends State<PembeliProfilPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Alamat Utama:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const Text('Alamat Utama:',
+                      style: TextStyle(fontWeight: FontWeight.bold)),
                   const SizedBox(height: 4),
                   Text(
                     '${alamatDefault!['NAMA_JALAN']}, ${alamatDefault!['KELURAHAN']}, ${alamatDefault!['KECAMATAN']}, ${alamatDefault!['KOTA']}, ${alamatDefault!['KODE_POS']}',
@@ -195,8 +232,22 @@ class _PembeliProfilPageState extends State<PembeliProfilPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Profil Pembeli'),
+        title: const Text(
+          'Profil Pembeli',
+          style: TextStyle(color: Colors.white),
+        ),
         backgroundColor: Colors.green[700],
+        automaticallyImplyLeading: false, // Menghilangkan tombol back
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout, color: Colors.white),
+            tooltip: 'Logout',
+            onPressed: () {
+              Navigator.pushNamedAndRemoveUntil(
+                  context, '/login', (route) => false);
+            },
+          ),
+        ],
       ),
       body: Center(
         child: isLoading
@@ -239,10 +290,14 @@ class _PembeliProfilPageState extends State<PembeliProfilPage> {
                                       ),
                                     ),
                                     const SizedBox(height: 24),
-                                    buildProfileItem(Icons.person, 'Nama', profilData!['nama']),
-                                    buildProfileItem(Icons.email, 'Email', profilData!['email']),
-                                    buildProfileItem(Icons.phone, 'Telepon', profilData!['telepon']),
-                                    buildProfileItem(Icons.star, 'Poin', profilData!['poin'].toString()),
+                                    buildProfileItem(Icons.person, 'Nama',
+                                        profilData!['nama']),
+                                    buildProfileItem(Icons.email, 'Email',
+                                        profilData!['email']),
+                                    buildProfileItem(Icons.phone, 'Telepon',
+                                        profilData!['telepon']),
+                                    buildProfileItem(Icons.star, 'Poin',
+                                        profilData!['poin'].toString()),
                                     buildAlamatDefault(),
                                   ],
                                 ),
@@ -251,7 +306,8 @@ class _PembeliProfilPageState extends State<PembeliProfilPage> {
                             const SizedBox(height: 24),
                             const Text(
                               'Riwayat Transaksi',
-                              style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                              style: TextStyle(
+                                  fontSize: 20, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 8),
                             buildRiwayatPembelian(),
@@ -259,6 +315,27 @@ class _PembeliProfilPageState extends State<PembeliProfilPage> {
                         ),
                       )
                     : const Text('Data profil tidak tersedia'),
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.white,
+        selectedItemColor: Colors.green[800],
+        unselectedItemColor: Colors.grey,
+        currentIndex: _selectedIndex,
+        onTap: _onNavItemTapped,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Beranda',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.card_giftcard),
+            label: 'Tukar Merchandise',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profil Akun',
+          ),
+        ],
       ),
     );
   }

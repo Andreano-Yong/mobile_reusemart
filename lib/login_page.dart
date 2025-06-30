@@ -1,10 +1,8 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-
-import 'penitipDashboard.dart';  // pastikan import ini ada
+import 'penitipDashboard.dart'; // pastikan import ini ada
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -29,6 +27,11 @@ class _LoginPageState extends State<LoginPage> {
     await prefs.setInt('idPenitip', idPenitip);
   }
 
+  Future<void> simpanIdHunter(int idHunter) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt('idHunter', idHunter);
+  }
+
   Future<void> login() async {
     final email = emailController.text.trim();
     final password = passwordController.text.trim();
@@ -42,7 +45,7 @@ class _LoginPageState extends State<LoginPage> {
 
     try {
       final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/api/login'),
+        Uri.parse('https://reusemartkf.barioth.web.id/api/login'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'email': email, 'password': password}),
       );
@@ -52,26 +55,25 @@ class _LoginPageState extends State<LoginPage> {
       if (response.statusCode == 200) {
         final result = jsonDecode(response.body);
         final role = result['role'];
-
-        // Contoh struktur data dari API:
-        // role = 'penitip'
-        // data = { 'ID_PENITIP': 123, ... }
+        final data = result['data'];
 
         if (role == 'pembeli') {
-          final idPembeli = result['data']['ID_PEMBELI'];
-          if (idPembeli != null) {
+          final idPembeli = int.tryParse(data['ID_PEMBELI'].toString()) ?? 0;
+          if (idPembeli > 0) {
             await simpanIdPembeli(idPembeli);
+            Navigator.pushReplacementNamed(context, '/pembeliDashboard');
+          } else {
+            showMessage('Data pembeli tidak ditemukan.');
           }
-          Navigator.pushReplacementNamed(context, '/pembeliDashboard');
 
         } else if (role == 'penitip') {
-          final idPenitip = result['data']['ID_PENITIP'];
-          if (idPenitip != null) {
+          final idPenitip = int.tryParse(data['ID_PENITIP'].toString()) ?? 0;
+          if (idPenitip > 0) {
             await simpanIdPenitip(idPenitip);
             Navigator.pushReplacement(
               context,
               MaterialPageRoute(
-                builder: (context) => PenitipDashboard(idPenitip: idPenitip),
+                builder: (context) => PenitipDashboardPage(idPenitip: idPenitip),
               ),
             );
           } else {
@@ -79,13 +81,32 @@ class _LoginPageState extends State<LoginPage> {
           }
 
         } else if (role == 'kurir') {
-          Navigator.pushReplacementNamed(context, '/kurirDashboard');
+          final idKurir = int.tryParse(data['ID_PEGAWAI'].toString()) ?? 0;
+          if (idKurir > 0) {
+            Navigator.pushReplacementNamed(
+              context,
+              '/kurirDashboard',
+              arguments: idKurir,
+            );
+          } else {
+            showMessage('Data kurir tidak ditemukan.');
+          }
 
         } else if (role == 'hunter') {
-          Navigator.pushReplacementNamed(context, '/hunterDashboard');
+          final idHunter = int.tryParse(data['ID_HUNTER'].toString()) ?? 0;
+          if (idHunter > 0) {
+            await simpanIdHunter(idHunter);
+            Navigator.pushReplacementNamed(
+              context,
+              '/hunterDashboard',
+              arguments: idHunter,
+            );
+          } else {
+            showMessage('Data hunter tidak ditemukan.');
+          }
 
         } else {
-          showMessage('Role tidak dikenali');
+          showMessage('Role tidak dikenali.');
         }
 
       } else {
@@ -175,8 +196,7 @@ class _LoginPageState extends State<LoginPage> {
                   onPressed: isLoading ? null : login,
                   child: isLoading
                       ? const CircularProgressIndicator(
-                          valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                         )
                       : const Text(
                           'Login',

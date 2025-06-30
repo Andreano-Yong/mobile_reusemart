@@ -7,6 +7,26 @@ class DetailProdukPage extends StatelessWidget {
 
   const DetailProdukPage({super.key, required this.barang});
 
+  // Fungsi untuk mengecek status garansi
+  String _cekGaransi(String? garansi) {
+    if (garansi == null || garansi.isEmpty) {
+      return 'Barang tidak punya garansi';
+    }
+
+    try {
+      final garansiDate = DateTime.parse(garansi);
+      final today = DateTime.now();
+
+      if (garansiDate.isBefore(today)) {
+        return 'Barang sudah tidak bergaransi';
+      } else {
+        return 'Garansi sampai: $garansi';
+      }
+    } catch (e) {
+      return 'Barang tidak punya garansi';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final List<String> gambarList = [
@@ -40,7 +60,7 @@ class DetailProdukPage extends StatelessWidget {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(8),
                     child: Image.network(
-                      'http://10.0.2.2:8000/storage/$gambar',
+                      'https://reusemartkf.barioth.web.id/storage/$gambar',
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) =>
                           const Icon(Icons.broken_image),
@@ -54,37 +74,45 @@ class DetailProdukPage extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.all(16.0),
               child: Align(
-                alignment: Alignment.centerLeft, // Memastikan isi rata kiri secara horizontal
+                alignment: Alignment.centerLeft,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start, // Anak-anak Column juga rata kiri
-                  mainAxisSize: MainAxisSize.min, // Supaya column sesuaikan tinggi isinya
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       barang.nama,
                       style: const TextStyle(
-                        fontSize: 22, 
+                        fontSize: 22,
                         fontWeight: FontWeight.bold,
                       ),
-                      textAlign: TextAlign.left, // Ini opsional, karena Column sudah atur rata kiri
                     ),
                     Text(
                       'Rp ${barang.harga}',
-                      textAlign: TextAlign.left,
+                      style: const TextStyle(
+                        fontSize: 16,
+                        color: Colors.black87,
+                      ),
                     ),
                     const SizedBox(height: 10),
                     Text(
                       'Deskripsi: ${barang.deskripsi}',
-                      textAlign: TextAlign.left,
+                      style: const TextStyle(fontSize: 14),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Garansi sampai: ${barang.garansi == null || barang.garansi.isEmpty ? "-" : barang.garansi}',
-                      textAlign: TextAlign.left,
+                      _cekGaransi(barang.garansi),
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: _cekGaransi(barang.garansi) ==
+                                'Barang sudah tidak bergaransi'
+                            ? Colors.red
+                            : Colors.black87,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       'Berat: ${barang.berat.toStringAsFixed(2)} kg',
-                      textAlign: TextAlign.left,
+                      style: const TextStyle(fontSize: 14),
                     ),
                   ],
                 ),

@@ -5,20 +5,29 @@ import 'package:http/http.dart' as http;
 
 import 'penitipProfil.dart';
 
-
-
-class PenitipDashboard extends StatefulWidget {
+class PenitipDashboardPage extends StatefulWidget {
   final int idPenitip;
-  const PenitipDashboard({Key? key, required this.idPenitip}) : super(key: key);
+  const PenitipDashboardPage({Key? key, required this.idPenitip}) : super(key: key);
 
   @override
-  State<PenitipDashboard> createState() => _PenitipDashboardState();
+  State<PenitipDashboardPage> createState() => _PenitipDashboardPageState();
 }
 
-class _PenitipDashboardState extends State<PenitipDashboard> {
+class _PenitipDashboardPageState extends State<PenitipDashboardPage> {
   List<Barang> barangList = [];
   bool isLoading = true;
   int _selectedIndex = 0;
+  String _selectedFilter = 'Semua';
+
+  List<Barang> get filteredBarangList {
+    if (_selectedFilter == 'Semua') {
+      return barangList;
+    } else {
+      return barangList
+          .where((barang) => barang.status.toLowerCase() == _selectedFilter.toLowerCase())
+          .toList();
+    }
+  }
 
   @override
   void initState() {
@@ -27,8 +36,7 @@ class _PenitipDashboardState extends State<PenitipDashboard> {
   }
 
   Future<void> fetchBarangHistory() async {
-    final url = Uri.parse('http://10.0.2.2:8000/api/penitip-mobile/${widget.idPenitip}/history-barang');
-
+    final url = Uri.parse('https://reusemartkf.barioth.web.id/api/penitip-mobile/${widget.idPenitip}/history-barang');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -61,7 +69,7 @@ class _PenitipDashboardState extends State<PenitipDashboard> {
     });
 
     if (index == 1) {
-      Navigator.push(
+      Navigator.pushReplacement(
         context,
         MaterialPageRoute(
           builder: (context) => PenitipProfilPage(idPenitip: widget.idPenitip),
@@ -92,26 +100,52 @@ class _PenitipDashboardState extends State<PenitipDashboard> {
                   children: [
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      child: Text(
-                        'History Transaksi Penitipan',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green[800],
-                        ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'History Transaksi Penitipan',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.green[800],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              const Text("Filter: "),
+                              const SizedBox(width: 8),
+                              DropdownButton<String>(
+                                value: _selectedFilter,
+                                items: ['Semua', 'Terjual', 'Tersedia', 'Barang Untuk Donasi']
+                                    .map((filter) => DropdownMenuItem(
+                                          value: filter,
+                                          child: Text(filter),
+                                        ))
+                                    .toList(),
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedFilter = value!;
+                                  });
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
                     Expanded(
                       child: ListView.builder(
-                        itemCount: barangList.length,
+                        itemCount: filteredBarangList.length,
                         itemBuilder: (context, index) {
-                          final barang = barangList[index];
+                          final barang = filteredBarangList[index];
                           return Card(
                             margin: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                             elevation: 3,
                             child: ListTile(
                               leading: Image.network(
-                                'http://10.0.2.2:8000/storage/${barang.gambar}',
+                                'https://reusemartkf.barioth.web.id/storage/${barang.gambar}',
                                 width: 60,
                                 height: 60,
                                 fit: BoxFit.cover,
@@ -156,8 +190,7 @@ class _PenitipDashboardState extends State<PenitipDashboard> {
   }
 }
 
-
-// Model Barang sesuai yang kamu punya, tapi tambahan properti Penitipan
+// Model Barang
 class Barang {
   final String nama;
   final int harga;
@@ -196,12 +229,12 @@ class Barang {
       berat: (json['BERAT'] != null)
           ? double.tryParse(json['BERAT'].toString()) ?? 0.0
           : 0.0,
-      penitipan: Penitipan.fromJson(json), // Ambil data penitipan langsung dari JSON flat
+      penitipan: Penitipan.fromJson(json),
     );
   }
 }
 
-// Model Penitipan sesuai yang kamu punya
+// Model Penitipan
 class Penitipan {
   final String tanggalPenitipan;
   final String tanggalBerakhir;

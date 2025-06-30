@@ -6,7 +6,7 @@ class Barang {
   final String gambar3;
   final String status;
   final String deskripsi;
-  final String garansi; // atau DateTime jika ingin parsing tanggal
+  final String garansi;
   final double berat;
 
   Barang({
@@ -24,16 +24,14 @@ class Barang {
   factory Barang.fromJson(Map<String, dynamic> json) {
     return Barang(
       nama: json['NAMA_BARANG'] ?? '',
-      harga: json['HARGA_BARANG'] ?? 0,
+      harga: int.tryParse(json['HARGA_BARANG'].toString()) ?? 0,
       gambar: json['GAMBAR_1'] ?? '',
       gambar2: json['GAMBAR_2'] ?? '',
       gambar3: json['GAMBAR_3'] ?? '',
       status: json['STATUS_BARANG'] ?? '',
       deskripsi: json['DESKRIPSI_BARANG'] ?? '',
-      garansi: json['GARANSI'] ?? '', // atau convert ke DateTime jika perlu
-      berat: (json['BERAT'] != null)
-          ? double.tryParse(json['BERAT'].toString()) ?? 0.0
-          : 0.0,
+      garansi: json['GARANSI'] ?? '',
+      berat: double.tryParse(json['BERAT'].toString()) ?? 0.0,
     );
   }
 }

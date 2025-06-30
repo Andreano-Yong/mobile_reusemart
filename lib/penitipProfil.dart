@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import 'penitipDashboard.dart';
+
 class PenitipProfilPage extends StatefulWidget {
   final int idPenitip;
 
@@ -15,6 +17,7 @@ class PenitipProfilPage extends StatefulWidget {
 class _PenitipProfilPageState extends State<PenitipProfilPage> {
   Map<String, dynamic>? profil;
   bool isLoading = true;
+  int _selectedIndex = 1;
 
   @override
   void initState() {
@@ -24,7 +27,7 @@ class _PenitipProfilPageState extends State<PenitipProfilPage> {
 
   Future<void> fetchProfil() async {
     final response = await http.get(
-      Uri.parse('http://10.0.2.2:8000/api/penitip/${widget.idPenitip}/profil'),
+      Uri.parse('https://reusemartkf.barioth.web.id/api/penitip/${widget.idPenitip}/profil'),
     );
 
     if (response.statusCode == 200) {
@@ -42,6 +45,21 @@ class _PenitipProfilPageState extends State<PenitipProfilPage> {
     }
   }
 
+  void _onNavItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    if (index == 0) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PenitipDashboardPage(idPenitip: widget.idPenitip),
+        ),
+      );
+    }
+  }
+
   Widget buildProfileTile(String label, String value, IconData icon) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -49,8 +67,7 @@ class _PenitipProfilPageState extends State<PenitipProfilPage> {
       margin: const EdgeInsets.symmetric(vertical: 8),
       child: ListTile(
         leading: Icon(icon, color: Colors.green[700]),
-        title: Text(label,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
+        title: Text(label, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14)),
         subtitle: Text(value, style: const TextStyle(fontSize: 16)),
       ),
     );
@@ -63,6 +80,7 @@ class _PenitipProfilPageState extends State<PenitipProfilPage> {
       appBar: AppBar(
         title: const Text('Profil Penitip'),
         backgroundColor: Colors.green[700],
+        foregroundColor: Colors.white,
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -91,9 +109,42 @@ class _PenitipProfilPageState extends State<PenitipProfilPage> {
                       buildProfileTile('Alamat', profil!['ALAMAT_PENITIP'], Icons.home),
                       buildProfileTile('Saldo', 'Rp ${profil!['SALDO_PENITIP']}', Icons.account_balance_wallet),
                       buildProfileTile('Poin Reward', '${profil!['POIN_PENITIP']}', Icons.star),
+                      const SizedBox(height: 24),
+                      ElevatedButton.icon(
+                        onPressed: () {
+                          Navigator.pushNamedAndRemoveUntil(context, '/login', (route) => false);
+                        },
+                        icon: const Icon(Icons.logout),
+                        label: const Text('Logout'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.grey[600],
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
+      bottomNavigationBar: BottomNavigationBar(
+        backgroundColor: Colors.white,
+        selectedItemColor: Colors.green[800],
+        unselectedItemColor: Colors.grey,
+        currentIndex: _selectedIndex,
+        onTap: _onNavItemTapped,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.home),
+            label: 'Beranda',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person),
+            label: 'Profil Akun',
+          ),
+        ],
+      ),
     );
   }
 }

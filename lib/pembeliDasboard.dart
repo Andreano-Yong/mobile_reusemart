@@ -7,6 +7,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'detailProdukPage.dart';
 import 'models/barang.dart';
 import 'pembeliProfil.dart';
+import 'tukarMerchandisePage.dart';
 
 class PembeliDashboardPage extends StatefulWidget {
   const PembeliDashboardPage({super.key});
@@ -35,7 +36,7 @@ class _PembeliDashboardPageState extends State<PembeliDashboardPage> {
   }
 
   Future<void> fetchBarang() async {
-    final url = Uri.parse('http://10.0.2.2:8000/api/barang');
+    final url = Uri.parse('https://reusemartkf.barioth.web.id/api/barang');
     try {
       final response = await http.get(url);
       if (response.statusCode == 200) {
@@ -63,7 +64,14 @@ class _PembeliDashboardPageState extends State<PembeliDashboardPage> {
       _selectedIndex = index;
     });
 
-    if (index == 2 && idPembeli != null) {
+    if (index == 1 && idPembeli != null) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => TukarMerchandisePage(idPembeli: idPembeli!),
+        ),
+      );
+    } else if (index == 2 && idPembeli != null) {
       Navigator.push(
         context,
         MaterialPageRoute(
@@ -135,7 +143,7 @@ class _PembeliDashboardPageState extends State<PembeliDashboardPage> {
                             borderRadius: const BorderRadius.vertical(
                                 top: Radius.circular(12)),
                             child: Image.network(
-                              'http://10.0.2.2:8000/storage/${barang.gambar}',
+                              'https://reusemartkf.barioth.web.id/storage/${barang.gambar}',
                               height: 170,
                               width: double.infinity,
                               fit: BoxFit.cover,
